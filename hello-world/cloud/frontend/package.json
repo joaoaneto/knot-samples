@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@cesarbr/knot-cloud-websocket": "^1.1.1",
+    "@cesarbr/knot-cloud-sdk-js": "^1.0.0",
     "http-proxy-middleware": "^0.19.1",
     "express": "^4.17.1",
     "express-healthcheck": "^0.1.0",
