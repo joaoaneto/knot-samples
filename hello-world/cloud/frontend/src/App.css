@@ -118,3 +118,7 @@ label {
   border-radius: 25px;
   color: white;
 }
+
+.device-grid {
+  margin: auto 2.5em 2em !important;
+}
