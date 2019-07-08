@@ -1,0 +1,9 @@
+FROM node:10
+
+WORKDIR /usr/src/app
+COPY package.json ./
+COPY yarn.lock ./
+RUN yarn
+
+ENV NODE_ENV=development
+CMD ["yarn", "start"]
