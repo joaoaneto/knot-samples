@@ -22,9 +22,7 @@ const Home = () => {
 
   const loadDevices = () => {
     cloud.once('ready', () => {
-      console.log('ready')
       cloud.once('devices', (devices) => {
-        console.log('devices')
         setDevices(() => devices);
         setIsLoading(() => false);
         setMsgError(() => '');
@@ -46,11 +44,7 @@ const Home = () => {
 
   const getMostRecentData = async (deviceId, sensorId) => {
     const query = { take: 1, orderBy: 'timestamp', order: -1 };
-
-    console.log('storage');
     const [data] = await storage.listDataBySensor(deviceId, sensorId, query);
-    console.log('data', data);
-
     if (data)
       return data.value;
   };
@@ -59,19 +53,18 @@ const Home = () => {
     const { id } = device.knot;
     const { name } = device.metadata;
     let sensorId;
-    if (device.schema) {
-      ([{ sensorId }] = device.schema);
-    } else { // Ignore devices without schema
+    if (!device.schema) {
       return null;
     }
-    let value = false;
-    getMostRecentData(id, sensorId).then((v) => { value = v; });
+
+    ([{ sensorId }] = device.schema);
+    // getMostRecentData(id, sensorId).then((v) => { value = v; });
 
     return (
       <Card className="online-device" id={id} key={id}>
         <Card.Content className="device-info">
           <Card.Header className="device-name">
-            {value ? <Icon name="lightbulb outline" color="yellow" size="big" /> : <Icon name="lightbulb" color="black" size="big" />}
+            {device.value ? <Icon name="lightbulb outline" color="yellow" size="big" /> : <Icon name="lightbulb" color="black" size="big" />}
             {name}
             {/* TODO: change to consume storage API */}
           </Card.Header>
@@ -89,14 +82,28 @@ const Home = () => {
     );
   };
 
+  const handleStatusChange = (id, value) => {
+    setDevices(prevState => {
+      const devices = prevState;
+      const updatedDevices = devices.map(device => device.knot.id === id ? { ...device, value } : device);
+      return updatedDevices;
+    });
+  }
+
+  const listenStatusData = () => {
+    cloud.on('data', (message) => handleStatusChange(message.from, message.payload.value));
+    cloud.connect();
+  };
+
   useEffect(() => { // componentDidMount
     if (credentials.uuid || credentials.token) {
       loadDevices();
+      listenStatusData();
       cloud.on('error', onError);
     }
 
     return function cleanup() {
-      // socket.close();
+      // cloud.close();
     }
   }, [cloud]);
 
