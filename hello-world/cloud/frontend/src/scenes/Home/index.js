@@ -20,12 +20,31 @@ const Home = () => {
     setTimeout(loadDevices, 3000);
   }
 
+  const loadRecentData = async () => {
+    const query = { take: 1, orderBy: 'timestamp', order: -1 };
+    setDevices(devices => {
+      const updatedDevices = Promise.all(devices.map(async (device) => {
+        console.log(device);
+        const data = await storage.listDataBySensor(device.knot.id, device.schema[0].sensorId, query);
+        if (!data) {
+          return device;
+        }
+
+        device.value = data.value;
+        return device;
+      }));
+
+      return updatedDevices;
+    });
+  };
+
   const loadDevices = () => {
     cloud.once('ready', () => {
       cloud.once('devices', (devices) => {
         setDevices(() => devices);
         setIsLoading(() => false);
         setMsgError(() => '');
+        loadRecentData();
         cloud.close();
       });
       cloud.getDevices({ type: 'knot:thing' });
@@ -42,13 +61,6 @@ const Home = () => {
     cloud.connect();
   }
 
-  const getMostRecentData = async (deviceId, sensorId) => {
-    const query = { take: 1, orderBy: 'timestamp', order: -1 };
-    const [data] = await storage.listDataBySensor(deviceId, sensorId, query);
-    if (data)
-      return data.value;
-  };
-
   const createDeviceCard = (device) => {
     const { id } = device.knot;
     const { name } = device.metadata;
@@ -58,7 +70,6 @@ const Home = () => {
     }
 
     ([{ sensorId }] = device.schema);
-    // getMostRecentData(id, sensorId).then((v) => { value = v; });
 
     return (
       <Card className="online-device" id={id} key={id}>
@@ -66,7 +77,6 @@ const Home = () => {
           <Card.Header className="device-name">
             {device.value ? <Icon name="lightbulb outline" color="yellow" size="big" /> : <Icon name="lightbulb" color="black" size="big" />}
             {name}
-            {/* TODO: change to consume storage API */}
           </Card.Header>
           <Card.Meta className="device-id">
             {id}
